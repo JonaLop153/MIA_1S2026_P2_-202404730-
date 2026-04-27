@@ -1,0 +1,18 @@
+<div class="consola-container">
+  <h3>Consola de Comandos</h3>
+  
+  <div class="salida" #salidaContainer>
+    <div *ngFor="let linea of salida" class="linea">{{ linea }}</div>
+  </div>
+
+  <div class="entrada">
+    <input 
+      type="text" 
+      [(ngModel)]="comando" 
+      (keyup.enter)="ejecutarComando()"
+      placeholder="Escribe un comando..."
+    />
+    <button (click)="ejecutarComando()">Ejecutar</button>
+    <button (click)="limpiarConsola()">Limpiar</button>
+  </div>
+</div>

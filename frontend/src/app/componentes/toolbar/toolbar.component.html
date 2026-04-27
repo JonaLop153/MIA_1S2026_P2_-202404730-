@@ -1,0 +1,14 @@
+<div class="toolbar">
+  <div class="logo">MIA - Sistema de Archivos</div>
+  
+  <nav class="menu">
+    <button (click)="irAHome()">Home</button>
+    <button (click)="irAExplorer()">Explorador</button>
+    <button (click)="irAJournaling()">Journaling</button>
+  </nav>
+
+  <div class="usuario-info" *ngIf="usuarioLogueado">
+    <span>👤 {{ usuarioLogueado }}</span>
+    <button (click)="cerrarSesion()">Cerrar Sesión</button>
+  </div>
+</div>

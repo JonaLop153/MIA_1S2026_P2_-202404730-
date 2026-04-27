@@ -1,0 +1,16 @@
+<div class="editor-container">
+  <h3>Editor de Scripts</h3>
+  
+  <div class="toolbar">
+    <input type="file" (change)="cargarArchivo($event)" accept=".smia" />
+    <button (click)="ejecutarScript()" [disabled]="ejecutando">
+      {{ ejecutando ? 'Ejecutando...' : 'Ejecutar Script' }}
+    </button>
+  </div>
+
+  <textarea 
+    [(ngModel)]="script" 
+    placeholder="# Escribe tu script .smia aquí..."
+    rows="20"
+  ></textarea>
+</div>

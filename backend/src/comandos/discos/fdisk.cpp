@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <vector>
 
+using namespace std;
+
 map<string, string> Fdisk::parsearParametros(const string& comando) {
     map<string, string> params;
     istringstream iss(comando);
@@ -79,10 +81,7 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
     if (params.count("type")) {
         string t = params.at("type");
         if (t == "P" || t == "E" || t == "L") type = t[0];
-        else {
-            std::cerr << "DEBUG FDISK: Tipo inválido" << std::endl;
-            return false;
-        }
+        else return false;
     }
     
     // Contar particiones existentes
@@ -94,15 +93,8 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
         }
     }
     
-    // Validar límites
-    if (type == 'P' && primarias + extendidas >= 4) {
-        std::cerr << "DEBUG FDISK: Límite de 4 particiones alcanzado" << std::endl;
-        return false;
-    }
-    if (type == 'E' && extendidas >= 1) {
-        std::cerr << "DEBUG FDISK: Ya existe una partición extendida" << std::endl;
-        return false;
-    }
+    if (type == 'P' && primarias + extendidas >= 4) return false;
+    if (type == 'E' && extendidas >= 1) return false;
     
     // Calcular tamaño
     int size = 0;
@@ -122,10 +114,7 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
     int start, espacioLibre;
     espacioLibre = calcularEspacioLibre(mbr, start, espacioLibre);
     
-    if (size > espacioLibre) {
-        std::cerr << "DEBUG FDISK: No hay espacio suficiente. Libre: " << espacioLibre << ", Solicitado: " << size << std::endl;
-        return false;
-    }
+    if (size > espacioLibre) return false;
     
     // Buscar slot libre
     int slotLibre = -1;
@@ -136,12 +125,9 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
         }
     }
     
-    if (slotLibre == -1) {
-        std::cerr << "DEBUG FDISK: No hay slots disponibles" << std::endl;
-        return false;
-    }
+    if (slotLibre == -1) return false;
     
-    // Calcular start (después del MBR + particiones existentes)
+    // Calcular start
     int nuevoStart = sizeof(MBR);
     for (int i = 0; i < 4; i++) {
         if (mbr.mbr_partitions[i].part_status == '1') {
@@ -163,14 +149,16 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
     mbr.mbr_partitions[slotLibre].part_correlative = 0;
     memset(mbr.mbr_partitions[slotLibre].part_id, 0, 4);
     
-    // Escribir MBR
-    ofstream outFile(diskPath, ios::binary | ios::out);
-    outFile.seekp(0, ios::beg);
-    outFile.write(reinterpret_cast<char*>(&mbr), sizeof(MBR));
-    outFile.flush();
+    // ✅ Escribir MBR con fstream y seekp/write/flush
+    fstream outFile(diskPath, ios::binary | ios::in | ios::out);
+    if (!outFile.is_open()) return false;
+    
+    outFile.seekp(0, ios::beg);  // ✅ seekp para escritura
+    outFile.write(reinterpret_cast<char*>(&mbr), sizeof(MBR));  // ✅ write
+    outFile.flush();  // ✅ flush
     outFile.close();
     
-    std::cerr << "DEBUG FDISK: Partición creada en slot " << slotLibre << ", start=" << nuevoStart << ", size=" << size << std::endl;
+    std::cerr << "DEBUG FDISK: Partición creada en slot " << slotLibre << std::endl;
     
     return true;
 }
@@ -178,21 +166,15 @@ bool Fdisk::crearParticion(const string& diskPath, const map<string, string>& pa
 bool Fdisk::eliminarParticion(const string& diskPath, const map<string, string>& params) {
     std::cerr << "DEBUG FDISK: Eliminando partición" << std::endl;
     
-    if (!params.count("name")) {
-        std::cerr << "DEBUG FDISK: -name obligatorio para eliminar" << std::endl;
-        return false;
-    }
+    if (!params.count("name")) return false;
     
     string name = params.at("name");
     string deleteMode = params.count("delete") ? params.at("delete") : "fast";
     
-    if (deleteMode != "fast" && deleteMode != "full") {
-        std::cerr << "DEBUG FDISK: Modo de eliminación inválido" << std::endl;
-        return false;
-    }
+    if (deleteMode != "fast" && deleteMode != "full") return false;
     
-    // Leer MBR
-    ifstream file(diskPath, ios::binary | ios::in | ios::out);
+    // ✅ Abrir con fstream para lectura y escritura
+    fstream file(diskPath, ios::binary | ios::in | ios::out);
     if (!file.is_open()) return false;
     
     MBR mbr;
@@ -210,15 +192,8 @@ bool Fdisk::eliminarParticion(const string& diskPath, const map<string, string>&
     }
     
     if (indice == -1) {
-        std::cerr << "DEBUG FDISK: Partición no encontrada" << std::endl;
         file.close();
         return false;
-    }
-    
-    // Si es extendida, eliminar lógicas también (simplificado: solo marcar como vacías)
-    if (mbr.mbr_partitions[indice].part_type == 'E') {
-        std::cerr << "DEBUG FDISK: Eliminando partición extendida y sus lógicas" << std::endl;
-        // En implementación completa, recorrer EBRs y eliminar
     }
     
     // Modo full: rellenar con \0
@@ -227,9 +202,9 @@ bool Fdisk::eliminarParticion(const string& diskPath, const map<string, string>&
         int size = mbr.mbr_partitions[indice].part_size;
         
         vector<char> buffer(size, '\0');
-        file.seekp(start, ios::beg);
-        file.write(buffer.data(), size);
-        file.flush();
+        file.seekp(start, ios::beg);  // ✅ seekp
+        file.write(buffer.data(), size);  // ✅ write
+        file.flush();  // ✅ flush
     }
     
     // Marcar como vacía
@@ -237,10 +212,10 @@ bool Fdisk::eliminarParticion(const string& diskPath, const map<string, string>&
     mbr.mbr_partitions[indice].part_correlative = 0;
     memset(mbr.mbr_partitions[indice].part_name, 0, 16);
     
-    // Escribir MBR
-    file.seekp(0, ios::beg);
-    file.write(reinterpret_cast<char*>(&mbr), sizeof(MBR));
-    file.flush();
+    // ✅ Escribir MBR actualizado
+    file.seekp(0, ios::beg);  // ✅ seekp
+    file.write(reinterpret_cast<char*>(&mbr), sizeof(MBR));  // ✅ write
+    file.flush();  // ✅ flush
     file.close();
     
     std::cerr << "DEBUG FDISK: Partición eliminada exitosamente" << std::endl;
@@ -250,8 +225,7 @@ bool Fdisk::eliminarParticion(const string& diskPath, const map<string, string>&
 
 bool Fdisk::modificarParticion(const string& diskPath, const map<string, string>& params) {
     std::cerr << "DEBUG FDISK: Modificando partición (add)" << std::endl;
-    // Implementación para add (agregar/quitar espacio)
-    // Simplificado: retornar false por ahora
+    // Implementación simplificada para add
     return false;
 }
 
@@ -264,7 +238,6 @@ string Fdisk::ejecutar(const string& comando) {
     
     string path = params["path"];
     
-    // Verificar si es delete
     if (params.count("delete")) {
         if (eliminarParticion(path, params)) {
             return "Partición eliminada exitosamente";
@@ -273,7 +246,6 @@ string Fdisk::ejecutar(const string& comando) {
         }
     }
     
-    // Verificar si es add
     if (params.count("add")) {
         if (modificarParticion(path, params)) {
             return "Partición modificada exitosamente";
@@ -282,7 +254,6 @@ string Fdisk::ejecutar(const string& comando) {
         }
     }
     
-    // Por defecto: crear partición
     if (crearParticion(path, params)) {
         return "Partición creada exitosamente";
     } else {

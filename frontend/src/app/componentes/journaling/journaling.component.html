@@ -1,0 +1,13 @@
+<div class="journaling-container">
+  <h3>Journaling (EXT3)</h3>
+  
+  <div class="form-group">
+    <label>ID Partición:</label>
+    <input type="text" [(ngModel)]="idParticion" placeholder="301A" />
+    <button (click)="verJournal()">Ver Journal</button>
+  </div>
+
+  <div *ngIf="journalData" class="journal-data">
+    <pre>{{ journalData }}</pre>
+  </div>
+</div>

@@ -6,6 +6,9 @@
 #include <iostream>
 #include <cstring>
 #include <ctime>
+#include <vector>
+
+using namespace std;
 
 map<string, string> Mkfs::parsearParametros(const string& comando) {
     map<string, string> params;
@@ -67,7 +70,7 @@ bool Mkfs::formatearEXT2(const string& diskPath, int partStart, SuperBlock& sb) 
     sb.s_journal_count = 0;
     
     // Escribir SuperBlock
-    ofstream sbFile(diskPath, ios::binary | ios::out | ios::in);
+    fstream sbFile(diskPath, ios::binary | ios::out | ios::in);
     sbFile.seekp(partStart, ios::beg);
     sbFile.write(reinterpret_cast<char*>(&sb), sizeof(SuperBlock));
     sbFile.flush();
@@ -159,7 +162,6 @@ bool Mkfs::formatearEXT3(const string& diskPath, int partStart, SuperBlock& sb) 
     std::cerr << "DEBUG MKFS: Formateando EXT3" << std::endl;
     
     // Calcular según fórmula del enunciado
-    // tamaño_particion = sizeof(SuperBlock) + n*sizeof(Journal) + n + 3*n + n*sizeof(Inodo) + 3*n*sizeof(Block)
     int particionSize = sb.s_blocks_count * 64;
     int journalSize = 50 * sizeof(JournalEntry);  // 50 entries según enunciado
     int n = (particionSize - sizeof(SuperBlock)) / (sizeof(JournalEntry) + 1 + 3 + sizeof(Inodo) + 3*64);
@@ -188,7 +190,7 @@ bool Mkfs::formatearEXT3(const string& diskPath, int partStart, SuperBlock& sb) 
     sb.s_journal_count = 50;
     
     // Escribir SuperBlock
-    ofstream sbFile(diskPath, ios::binary | ios::out | ios::in);
+    fstream sbFile(diskPath, ios::binary | ios::out | ios::in);
     sbFile.seekp(partStart, ios::beg);
     sbFile.write(reinterpret_cast<char*>(&sb), sizeof(SuperBlock));
     sbFile.flush();
@@ -198,8 +200,6 @@ bool Mkfs::formatearEXT3(const string& diskPath, int partStart, SuperBlock& sb) 
     sbFile.seekp(partStart + sb.s_journal_start, ios::beg);
     sbFile.write(journal.data(), journalSize);
     sbFile.flush();
-    
-    // Resto similar a EXT2...
     sbFile.close();
     
     std::cerr << "DEBUG MKFS: EXT3 formateado exitosamente" << std::endl;

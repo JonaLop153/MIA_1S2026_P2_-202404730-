@@ -1,0 +1,19 @@
+<div class="disk-selector">
+  <h3>Seleccionar Disco</h3>
+  
+  <div class="discos-lista">
+    <div *ngFor="let disco of discos" 
+         class="disco-item"
+         [class.seleccionado]="discoSeleccionado === disco.path"
+         (click)="seleccionarDisco(disco)">
+      <div class="disco-nombre">{{ disco.nombre }}</div>
+      <div class="disco-info">
+        <span>Tamaño: {{ disco.size }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="discoSeleccionado" class="seleccion-info">
+    Disco seleccionado: {{ discoSeleccionado }}
+  </div>
+</div>

@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cstring>
 
+using namespace std;
+
 map<string, string> Unmount::parsearParametros(const string& comando) {
     map<string, string> params;
     istringstream iss(comando);
@@ -55,8 +57,8 @@ string Unmount::ejecutar(const string& comando) {
     
     std::cerr << "DEBUG UNMOUNT: diskPath=" << diskPath << ", indice=" << indice << std::endl;
     
-    // ✅ Leer MBR
-    ifstream file(diskPath, ios::binary | ios::in | ios::out);
+    // ✅ Abrir archivo para lectura y escritura
+    fstream file(diskPath, ios::binary | ios::in | ios::out);
     if (!file.is_open()) {
         std::cerr << "DEBUG UNMOUNT: No se pudo abrir el disco" << std::endl;
         return "Error: No se pudo abrir el disco";

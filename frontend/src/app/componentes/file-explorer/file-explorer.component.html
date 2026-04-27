@@ -1,0 +1,26 @@
+<div class="explorer-container">
+  <h3>Explorador de Archivos</h3>
+  
+  <div class="ruta-actual">
+    Ruta: {{ rutaActual }}
+  </div>
+
+  <div *ngIf="mensaje" class="mensaje">{{ mensaje }}</div>
+
+  <div class="archivos-lista">
+    <div *ngFor="let archivo of archivos" class="archivo-item">
+      <span [class.carpeta]="archivo.tipo === 'carpeta'"
+            [class.archivo]="archivo.tipo === 'archivo'">
+        {{ archivo.nombre }}
+      </span>
+      <button *ngIf="archivo.tipo === 'carpeta'" 
+              (click)="navegarCarpeta(archivo.nombre)">
+        Abrir
+      </button>
+      <button *ngIf="archivo.tipo === 'archivo'" 
+              (click)="verContenidoArchivo(archivo.nombre)">
+        Ver
+      </button>
+    </div>
+  </div>
+</div>
